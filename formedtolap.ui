@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>908</width>
-    <height>644</height>
+    <width>906</width>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -182,7 +182,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QPlainTextEdit" name="plainTextEditQury"/>
+         <widget class="CodeEditor" name="plainTextEditQury"/>
         </item>
        </layout>
       </widget>
@@ -232,6 +232,11 @@
    <class>TableView</class>
    <extends>QTableView</extends>
    <header>olap/tableview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CodeEditor</class>
+   <extends>QPlainTextEdit</extends>
+   <header>codeeditor.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

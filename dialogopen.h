@@ -5,6 +5,7 @@
 #include <QSqlQueryModel>
 #include <QSqlError>
 #include <QDebug>
+#include <QMessageBox>
 
 namespace Ui {
 class DialogOpen;

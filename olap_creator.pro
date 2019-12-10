@@ -33,7 +33,9 @@ SOURCES += \
     olap/olapmodel.cpp \
     olap/tableview.cpp \
     formedtolap.cpp \
-    dialogopen.cpp
+    dialogopen.cpp \
+    sqlhighlighter.cpp \
+    codeeditor.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -44,7 +46,9 @@ HEADERS += \
     olap/olapmodel.h \
     olap/tableview.h \
     formedtolap.h \
-    dialogopen.h
+    dialogopen.h \
+    sqlhighlighter.h \
+    codeeditor.h
 
 FORMS += \
         mainwindow.ui \

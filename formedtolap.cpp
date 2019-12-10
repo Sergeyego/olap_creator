@@ -11,6 +11,8 @@ FormEdtOlap::FormEdtOlap(QWidget *parent) :
     ui->dateEditBeg->setDate(QDate::currentDate().addDays(-QDate::currentDate().day()+1));
     ui->dateEditEnd->setDate(QDate::currentDate());
 
+    sQLHighlighter = new SQLHighlighter(ui->plainTextEditQury->document());
+
     ui->tableWidgetColumns->setColumnCount(1);
     ui->tableWidgetColumns->setRowCount(ui->spinBoxCount->value());
     ui->tableWidgetColumns->verticalHeader()->setDefaultSectionSize(ui->tableWidgetColumns->verticalHeader()->fontMetrics().height()*1.5);
@@ -83,7 +85,7 @@ QString FormEdtOlap::strAxes() const
             if (!s.isEmpty()){
                 s+=", ";
             }
-            s+=it->data(Qt::DisplayRole).toString();
+            s+="\""+it->data(Qt::DisplayRole).toString()+"\"";
         }
     }
     s.prepend("{");

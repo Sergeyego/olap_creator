@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QMessageBox>
+#include "sqlhighlighter.h"
 
 namespace Ui {
 class FormEdtOlap;
@@ -37,6 +38,7 @@ private:
     QString getStr(int d);
     void setErrText(QString text, bool err=true);
     bool changed;
+    SQLHighlighter *sQLHighlighter;
 
 private slots:
     void setColumnCount(int i);

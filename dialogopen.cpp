@@ -10,7 +10,7 @@ DialogOpen::DialogOpen(QWidget *parent) :
     model = new QSqlQueryModel(this);
     model->setQuery("select id, nam, columns, query, dc from olaps order by nam");
     if (model->lastError().isValid()){
-
+        QMessageBox::critical(this,QObject::tr("Error"),model->lastError().text(),QMessageBox::Ok);
     } else {
         ui->tableView->setModel(model);
         model->setHeaderData(0,Qt::Horizontal,QString("Id"));
