@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QSqlQueryModel>
 #include <QSqlError>
+#include <QDebug>
 
 namespace Ui {
 class DialogOpen;
@@ -25,6 +26,7 @@ public:
 private:
     Ui::DialogOpen *ui;
     QSqlQueryModel *model;
+    QVariant currentData(int col) const;
 };
 
 #endif // DIALOGOPEN_H

@@ -47,6 +47,7 @@ void FormEdtOlap::setData(const QString &title, const QStringList &axes, const Q
             ui->tableWidgetColumns->setItem(i,0,new QTableWidgetItem(axes.at(i)));
         }
     }
+    ui->tableWidgetColumns->setHorizontalHeaderItem(0,new QTableWidgetItem(QString("Название осей")));
     ui->plainTextEditQury->document()->setPlainText(query);
     ui->spinBoxDec->setValue(dec);
     if (id>=0){
@@ -216,7 +217,6 @@ bool FormEdtOlap::save()
         qu.bindValue(":dc",dec());
         if (!qu.exec()){
             QMessageBox::critical(this,QObject::tr("Error"),qu.lastError().text(),QMessageBox::Ok);
-            setErrText(qu.lastError().text());
         } else {
             while (qu.next()){
                 ui->lineEditId->setText(qu.value(0).toString());
@@ -228,7 +228,7 @@ bool FormEdtOlap::save()
         int id=ui->lineEditId->text().toInt(&ok);
         if (ok){
             if (exist(id)){
-                int n= QMessageBox::question(this,QString("Подтвердите действие"),QString("Перезаписать отчет с идентификатором $1?").arg(id),QMessageBox::Ok,QMessageBox::No);
+                int n= QMessageBox::question(this,QString("Подтвердите действие"),QString("Перезаписать отчет с идентификатором %1?").arg(id),QMessageBox::Ok,QMessageBox::No);
                 if (n==QMessageBox::Ok){
                     QSqlQuery qu;
                     qu.prepare("update olaps set nam=:nam, columns=:columns, query=:query, dc=:dc where id=:id");
@@ -239,7 +239,6 @@ bool FormEdtOlap::save()
                     qu.bindValue(":id",id);
                     if (!qu.exec()){
                         QMessageBox::critical(this,QObject::tr("Error"),qu.lastError().text(),QMessageBox::Ok);
-                        setErrText(qu.lastError().text());
                     } else {
                         saved=true;
                     }
@@ -254,7 +253,6 @@ bool FormEdtOlap::save()
                 qu.bindValue(":dc",dec());
                 if (!qu.exec()){
                     QMessageBox::critical(this,QObject::tr("Error"),qu.lastError().text(),QMessageBox::Ok);
-                    setErrText(qu.lastError().text());
                 } else {
                     saved=true;
                 }
