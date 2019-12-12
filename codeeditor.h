@@ -3,6 +3,7 @@
 
 #include <QPlainTextEdit>
 #include <QObject>
+#include <QTextBlockUserData>
 
 QT_BEGIN_NAMESPACE
 class QPaintEvent;
@@ -13,7 +14,6 @@ QT_END_NAMESPACE
 
 class LineNumberArea;
 
-
 class CodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
@@ -23,16 +23,21 @@ public:
 
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     int lineNumberAreaWidth();
+    void setErrRow(int row);
+    void createBracketsSelection(int position);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    inline QChar character(const QTextCursor &c);
 
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void updateLineNumberArea(const QRect &, int);
+    void matchBrackets();
 
 private:
     QWidget *lineNumberArea;
+    int errRow;
 };
 
 class LineNumberArea : public QWidget

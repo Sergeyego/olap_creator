@@ -4,6 +4,7 @@
 #include <QtGui/QSyntaxHighlighter>
 #include <QTextCharFormat>
 #include <QRegularExpression>
+#include <QDebug>
 
 class QTextDocument;
 

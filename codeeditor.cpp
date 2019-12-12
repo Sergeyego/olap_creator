@@ -6,9 +6,12 @@
 CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent)
 {
     lineNumberArea = new LineNumberArea(this);
+    errRow=-1;
 
     connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
+
+    connect(this, SIGNAL(cursorPositionChanged()),this, SLOT(matchBrackets()));
     updateLineNumberAreaWidth(0);
 }
 
@@ -22,9 +25,126 @@ int CodeEditor::lineNumberAreaWidth()
         ++digits;
     }
 
-    int space = 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+    int space = 15 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
 
     return space;
+}
+
+void CodeEditor::setErrRow(int row)
+{
+    errRow=row;
+    update();
+}
+
+void CodeEditor::matchBrackets()
+{
+    QList <QTextEdit::ExtraSelection> selections;
+    setExtraSelections(selections);
+
+    const QChar leftBrack='(';
+    const QChar rightBrack=')';
+    const QChar app='\'';
+
+    if (character(textCursor())==leftBrack){
+        int numberbra=1;
+        bool ignorestr=false;
+        bool ignorecomment=false;
+        createBracketsSelection(textCursor().position());
+        QTextCursor cursor = textCursor();
+        while (!cursor.atEnd()){
+            cursor.movePosition(QTextCursor::NextCharacter);
+            if (character(cursor)==app){
+                ignorestr=!ignorestr;
+            }
+            if (character(cursor)=='/'){
+                QTextCursor c=cursor;
+                c.movePosition(QTextCursor::NextCharacter);
+                if (character(c)=='*'){
+                    ignorecomment=!ignorecomment;
+                }
+            }
+            if (character(cursor)=='*'){
+                QTextCursor c=cursor;
+                c.movePosition(QTextCursor::NextCharacter);
+                if (character(c)=='/'){
+                    ignorecomment=!ignorecomment;
+                }
+            }
+            if (!ignorestr && !ignorecomment){
+                if (character(cursor)==leftBrack){
+                    numberbra++;
+                } else if (character(cursor)==rightBrack){
+                    numberbra--;
+                    if (numberbra==0){
+                        createBracketsSelection(cursor.position());
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        QTextCursor cursor = textCursor();
+        cursor.movePosition(QTextCursor::PreviousCharacter);
+        if (character(cursor)==rightBrack){
+            int numberbra=1;
+            bool ignorestr=false;
+            bool ignorecomment=false;
+            createBracketsSelection(cursor.position());
+            while (!cursor.atStart()){
+                cursor.movePosition(QTextCursor::PreviousCharacter);
+                if (character(cursor)==app){
+                    ignorestr=!ignorestr;
+                }
+                if (character(cursor)=='/'){
+                    QTextCursor c=cursor;
+                    c.movePosition(QTextCursor::PreviousCharacter);
+                    if (character(c)=='*'){
+                        ignorecomment=!ignorecomment;
+                    }
+                }
+                if (character(cursor)=='*'){
+                    QTextCursor c=cursor;
+                    c.movePosition(QTextCursor::PreviousCharacter);
+                    if (character(c)=='/'){
+                        ignorecomment=!ignorecomment;
+                    }
+                }
+                if (!ignorestr && !ignorecomment){
+                    if (character(cursor)==rightBrack){
+                        numberbra++;
+                    } else if (character(cursor)==leftBrack){
+                        numberbra--;
+                        if (numberbra==0){
+                            createBracketsSelection(cursor.position());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CodeEditor::createBracketsSelection(int position)
+{
+    QList <QTextEdit::ExtraSelection> listSelections = extraSelections();
+
+    QTextEdit::ExtraSelection selection;
+
+    QTextCharFormat format = selection.format;
+    format.setForeground(Qt::red);
+    format.setBackground(QColor(169,224,169));
+    selection.format = format;
+
+    QTextCursor cursor = textCursor();
+    cursor.setPosition(position);
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+
+    selection.cursor = cursor;
+
+    listSelections.append(selection);
+
+    setExtraSelections(listSelections);
 }
 
 
@@ -48,15 +168,26 @@ void CodeEditor::updateLineNumberArea(const QRect &rect, int dy)
 void CodeEditor::resizeEvent(QResizeEvent *e)
 {
     QPlainTextEdit::resizeEvent(e);
-
     QRect cr = contentsRect();
     lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+}
+
+QChar CodeEditor::character(const QTextCursor &c)
+{
+    QChar ch;
+    QTextBlock textBlock = c.block();
+    QString text=textBlock.text();
+    int pos=c.position() - textBlock.position();
+    if (pos>=0 && pos<text.size()){
+        ch=text.at(pos);
+    }
+    return ch;
 }
 
 void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
     QPainter painter(lineNumberArea);
-    painter.fillRect(event->rect(), Qt::lightGray);
+    painter.fillRect(event->rect(), palette().background().color());
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -66,9 +197,12 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
-            painter.setPen(Qt::black);
-            painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(),
-                             Qt::AlignRight, number);
+            painter.setPen(palette().windowText().color());
+            painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(),Qt::AlignRight, number);
+            if (errRow==blockNumber+1){
+                painter.setBrush(Qt::white);
+                painter.drawEllipse(0,top+2,fontMetrics().height()-5,fontMetrics().height()-5);
+            }
         }
 
         block = block.next();

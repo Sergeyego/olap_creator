@@ -29,18 +29,35 @@ void SQLHighlighter::highlightBlock(const QString &text)
     const QRegExp numbersRegexp("\\b((\\d+)(\\.)?)",Qt::CaseInsensitive);
     setFormatByRegExp(numbersRegexp, text, QColor(0,7,194));
 
-    const QRegExp stringsRegexp("'[^']+'",Qt::CaseInsensitive);
-    setFormatByRegExp(stringsRegexp, text, QColor(198,59,133));
-
-    const QRegExp commentRegexp("^--[^\n]*");
+    const QRegExp commentRegexp("--[^\\n]*");
     setFormatByRegExp(commentRegexp, text, QColor(23,139,23));
 
-    setCurrentBlockState(0);
+    setCurrentBlockState(2);
+    QRegularExpression strStartExpression("'.*");
+    QRegularExpression strEndExpression ("([^']'|'')");
+    int startInd = 0;
+    if (previousBlockState() != 3){
+        startInd = text.indexOf(strStartExpression);
+    }
+    while (startInd >= 0) {
+        QRegularExpressionMatch match = strEndExpression.match(text, startInd);
+        int endIndex = match.capturedStart();
+        int strLength = 0;
+        if (endIndex == -1) {
+            setCurrentBlockState(3);
+            strLength = text.length() - startInd;
+        } else {
+            strLength = endIndex - startInd + match.capturedLength();
+        }
+        setFormat(startInd, strLength, QColor(198,59,133));
+        startInd = text.indexOf(strStartExpression, startInd + strLength);
+    }
+
     QRegularExpression commentStartExpression("/\\*");
     QRegularExpression commentEndExpression ("\\*/");
     int startIndex = 0;
     if (previousBlockState() != 1){
-        startIndex = text.indexOf(commentStartExpression);
+        startIndex =text.indexOf(commentStartExpression);
     }
     while (startIndex >= 0) {
         QRegularExpressionMatch match = commentEndExpression.match(text, startIndex);
@@ -50,8 +67,7 @@ void SQLHighlighter::highlightBlock(const QString &text)
             setCurrentBlockState(1);
             commentLength = text.length() - startIndex;
         } else {
-            commentLength = endIndex - startIndex
-                    + match.capturedLength();
+            commentLength = endIndex - startIndex + match.capturedLength();
         }
         setFormat(startIndex, commentLength, QColor(23,139,23));
         startIndex = text.indexOf(commentStartExpression, startIndex + commentLength);

@@ -197,6 +197,12 @@ void FormEdtOlap::goQuery()
     model->setQuery(qu);
     qint64 querytime=dt1.msecsTo(QDateTime::currentDateTime());
     if (model->lastError().isValid()){
+        QRegExp reg("\\n\\w*\\s(\\d+):\\s");
+        if (reg.indexIn(model->lastError().databaseText())!=-1){
+            ui->plainTextEditQury->setErrRow(reg.cap(1).toInt());
+        } else {
+            ui->plainTextEditQury->setErrRow(-1);
+        }
         setErrText(model->lastError().text(),true);
         ui->labelStatus->setText(QString("Выполнение запроса завершилось ошибкой"));
     } else {
@@ -204,6 +210,7 @@ void FormEdtOlap::goQuery()
         ui->labelStatus->setText(stat);
         ui->tabWidget->setCurrentIndex(0);
         setErrText(stat,false);
+        ui->plainTextEditQury->setErrRow(-1);
     }
 }
 
