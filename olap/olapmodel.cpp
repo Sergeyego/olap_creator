@@ -1,12 +1,13 @@
 #include "olapmodel.h"
 
 OlapModel::OlapModel(QStringList axes, int dec, QObject *parent) :
-    QAbstractTableModel(parent), decimal(dec)
+    QAbstractTableModel(parent)
 {
-    tSum = new Sum(tr("Сумма"));
-    tAvg = new Avg(tr("Среднее"));
-    tMin = new Min(tr("Минимум"));
-    tMax = new Max(tr("Максимум"));
+    decimal=dec;
+    tSum = new Sum(tr("Сумма"),this);
+    tAvg = new Avg(tr("Среднее"),this);
+    tMin = new Min(tr("Минимум"),this);
+    tMax = new Max(tr("Максимум"),this);
     pTtl=tSum;
     hCube = new hyper_cube;
     n=axes.size();
@@ -18,10 +19,6 @@ OlapModel::OlapModel(QStringList axes, int dec, QObject *parent) :
 OlapModel::~OlapModel()
 {
     delete hCube;
-    delete tSum;
-    delete tAvg;
-    delete tMin;
-    delete tMax;
 }
 
 int OlapModel::rowCount(const QModelIndex& /*parent*/) const

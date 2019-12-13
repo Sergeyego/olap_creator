@@ -20,45 +20,51 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <QObject>
 #include <QMap>
 #include <QVector>
 #include <QString>
 #include <QStringList>
 
-class Ttl{
-  protected:
-    double r;
-    QString name;
-  public:
-    Ttl(QString);
+class Ttl: public QObject {
+    Q_OBJECT
+public:
+    Ttl(QString, QObject *parent=0);
     QString getName();
     void setR(double R);
     virtual void updR(double E)=0;
     virtual double getR(int N)=0;
+protected:
+    double r;
+    QString name;
 };
 
 class Sum: public Ttl{
-  public:
-    Sum(QString);
+    Q_OBJECT
+public:
+    Sum(QString, QObject *parent=0);
     virtual void updR(double E);
     virtual double getR(int N);
 };
 
 class Avg: public Sum{
-  public:
-    Avg(QString);
+    Q_OBJECT
+public:
+    Avg(QString, QObject *parent=0);
     virtual double getR(int N);
 };
 
 class Max: public Sum{
-  public:
-    Max(QString);
+    Q_OBJECT
+public:
+    Max(QString, QObject *parent=0);
     virtual void updR(double E);
 };
 
 class Min: public Sum{
-  public:
-    Min(QString);
+    Q_OBJECT
+public:
+    Min(QString, QObject *parent=0);
     virtual void updR(double E);
 };
 
@@ -68,8 +74,8 @@ typedef QVector<int> i_dims;
 typedef QMap<QString,int> m_keys;
 
 struct l_cube{
-  s_keys dims;
-  double r;
+    s_keys dims;
+    double r;
 };
 
 typedef QVector<l_cube> data_cube;
@@ -84,7 +90,7 @@ protected:
     vm_keys cX_keys, cY_keys;   //массивы словарей с частичными ключами
     char dlm;                   //разделитель
     int N;                      //к-во осей гиперкуба
- public:
+public:
     m_keys *pX, *pY;            //словари с полными ключами
     int Nx, Ny;                 //размер проекции
     int Hx, Hy;                 //к-во осей гиперкуба на осях проекции
@@ -95,7 +101,7 @@ protected:
     void setN(int n);
     int make_proj(i_dims Y, i_dims X, Ttl* pTtl);
     void add(s_keys sk, double res);
- //protected:
+    //protected:
     void clear();
     void dims(i_dims Y, i_dims X);
 };

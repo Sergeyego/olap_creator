@@ -2,10 +2,11 @@
 #include "ui_cubewidget.h"
 
 CubeWidget::CubeWidget(QString head, QStringList axes, QString qu, int dec, QWidget *parent) :
-    QWidget(parent), query(qu),
+    QWidget(parent),
     ui(new Ui::CubeWidget)
 {
     ui->setupUi(this);
+    query=qu;
     ui->cmdUpd->setIcon(QIcon(QApplication::style()->standardIcon(QStyle::SP_BrowserReload)));
     ui->cmdSave->setIcon(QIcon(QApplication::style()->standardIcon(QStyle::SP_DialogSaveButton)));
 

@@ -10,8 +10,8 @@ CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent)
 
     connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
-
     connect(this, SIGNAL(cursorPositionChanged()),this, SLOT(matchBrackets()));
+
     updateLineNumberAreaWidth(0);
 }
 
@@ -24,9 +24,7 @@ int CodeEditor::lineNumberAreaWidth()
         max /= 10;
         ++digits;
     }
-
     int space = 15 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
-
     return space;
 }
 
@@ -49,28 +47,31 @@ void CodeEditor::matchBrackets()
         int numberbra=1;
         bool ignorestr=false;
         bool ignorecomment=false;
+        bool ignoresingcomment=false;
         createBracketsSelection(textCursor().position());
         QTextCursor cursor = textCursor();
         while (!cursor.atEnd()){
             cursor.movePosition(QTextCursor::NextCharacter);
+            QTextCursor nextCursor=cursor;
+            nextCursor.movePosition(QTextCursor::NextCharacter);
+
             if (character(cursor)==app){
                 ignorestr=!ignorestr;
             }
-            if (character(cursor)=='/'){
-                QTextCursor c=cursor;
-                c.movePosition(QTextCursor::NextCharacter);
-                if (character(c)=='*'){
-                    ignorecomment=!ignorecomment;
-                }
+            if (character(cursor)=='/'&& character(nextCursor)=='*' && cursor.blockNumber()==nextCursor.blockNumber()){
+                ignorecomment=true;
             }
-            if (character(cursor)=='*'){
-                QTextCursor c=cursor;
-                c.movePosition(QTextCursor::NextCharacter);
-                if (character(c)=='/'){
-                    ignorecomment=!ignorecomment;
-                }
+            if (character(cursor)=='*' && character(nextCursor)=='/'&& cursor.blockNumber()==nextCursor.blockNumber()){
+                ignorecomment=false;
             }
-            if (!ignorestr && !ignorecomment){
+            if (character(cursor)=='-' && character(nextCursor)=='-'&& cursor.blockNumber()==nextCursor.blockNumber()){
+                ignoresingcomment=true;
+            }
+            if (cursor.blockNumber()!=nextCursor.blockNumber() && ignoresingcomment){
+                ignoresingcomment=false;
+            }
+
+            if (!ignorestr && !ignorecomment && !ignoresingcomment){
                 if (character(cursor)==leftBrack){
                     numberbra++;
                 } else if (character(cursor)==rightBrack){
@@ -85,31 +86,46 @@ void CodeEditor::matchBrackets()
     } else {
         QTextCursor cursor = textCursor();
         cursor.movePosition(QTextCursor::PreviousCharacter);
+
         if (character(cursor)==rightBrack){
             int numberbra=1;
             bool ignorestr=false;
             bool ignorecomment=false;
+            bool ignoresingcomment=false;
             createBracketsSelection(cursor.position());
             while (!cursor.atStart()){
+                int oldNum=cursor.blockNumber();
                 cursor.movePosition(QTextCursor::PreviousCharacter);
+                QTextCursor previousCursor = cursor;
+                previousCursor.movePosition(QTextCursor::PreviousCharacter);
+
                 if (character(cursor)==app){
                     ignorestr=!ignorestr;
                 }
-                if (character(cursor)=='/'){
+                if (character(cursor)=='/' && character(previousCursor)=='*' && cursor.blockNumber()==previousCursor.blockNumber()){
+                    ignorecomment=true;
+                }
+                if (character(cursor)=='*' && character(previousCursor)=='/'&& cursor.blockNumber()==previousCursor.blockNumber()){
+                    ignorecomment=false;
+                }
+                if (cursor.blockNumber()!=oldNum){
                     QTextCursor c=cursor;
-                    c.movePosition(QTextCursor::PreviousCharacter);
-                    if (character(c)=='*'){
-                        ignorecomment=!ignorecomment;
+                    while (!c.atBlockStart()){
+                        if (character(c)=='-'){
+                            c.movePosition(QTextCursor::PreviousCharacter);
+                            if (character(c)=='-'){
+                                ignoresingcomment=true;
+                                break;
+                            }
+                        }
+                        c.movePosition(QTextCursor::PreviousCharacter);
                     }
                 }
-                if (character(cursor)=='*'){
-                    QTextCursor c=cursor;
-                    c.movePosition(QTextCursor::PreviousCharacter);
-                    if (character(c)=='/'){
-                        ignorecomment=!ignorecomment;
-                    }
+                if (character(cursor)=='-' && character(previousCursor)=='-'&& cursor.blockNumber()==previousCursor.blockNumber() && ignoresingcomment){
+                    ignoresingcomment=false;
                 }
-                if (!ignorestr && !ignorecomment){
+
+                if (!ignorestr && !ignorecomment && !ignoresingcomment){
                     if (character(cursor)==rightBrack){
                         numberbra++;
                     } else if (character(cursor)==leftBrack){
@@ -213,3 +229,18 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 }
 
 
+
+LineNumberArea::LineNumberArea(CodeEditor *editor) : QWidget(editor)
+{
+    codeEditor = editor;
+}
+
+QSize LineNumberArea::sizeHint() const
+{
+    return QSize(codeEditor->lineNumberAreaWidth(), 0);
+}
+
+void LineNumberArea::paintEvent(QPaintEvent *event)
+{
+    codeEditor->lineNumberAreaPaintEvent(event);
+}
