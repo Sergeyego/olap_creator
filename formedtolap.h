@@ -26,6 +26,7 @@ public:
     QString strAxes() const;
     QString query() const;
     int dec() const;
+    int id() const;
     bool exist(int id);
     bool saveEnable();
 

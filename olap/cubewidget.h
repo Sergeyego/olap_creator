@@ -16,9 +16,11 @@ class CubeWidget : public QWidget
     
 public:
     explicit CubeWidget(QString head, QStringList axes, QString qu, int dec, QWidget *parent = 0);
+    explicit CubeWidget(int id_cube, QWidget *parent = 0);
     ~CubeWidget();
     
 private:
+    void inital(QString head, QStringList axes, QString qu, int dec);
     Ui::CubeWidget *ui;
     OlapModel *olapmodel;
     QString query;

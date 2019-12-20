@@ -103,6 +103,13 @@ int FormEdtOlap::dec() const
     return ui->spinBoxDec->text().toInt();
 }
 
+int FormEdtOlap::id() const
+{
+    bool ok;
+    int id=ui->lineEditId->text().toInt(&ok);
+    return ok ? id : -1;
+}
+
 bool FormEdtOlap::exist(int id)
 {
     bool b=false;
