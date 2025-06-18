@@ -108,7 +108,6 @@ void MainWindow::importProfr()
             settings.setValue("openPath",info.path());
 
             QTextStream in(&file);
-            in.setCodec(QTextCodec::codecForName("UTF-8"));
 
             enum stat {UNC=1, HEAD, CONN, AXES, QUERY, DEC} st;
             st=stat::UNC;

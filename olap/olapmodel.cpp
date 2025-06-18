@@ -4,10 +4,10 @@ OlapModel::OlapModel(QStringList axes, int dec, QObject *parent) :
     QAbstractTableModel(parent)
 {
     decimal=dec;
-    tSum = new Sum(tr("Сумма"),this);
-    tAvg = new Avg(tr("Среднее"),this);
-    tMin = new Min(tr("Минимум"),this);
-    tMax = new Max(tr("Максимум"),this);
+    tSum = new Sum(QString::fromUtf8("Сумма"),this);
+    tAvg = new Avg(QString::fromUtf8("Среднее"),this);
+    tMin = new Min(QString::fromUtf8("Минимум"),this);
+    tMax = new Max(QString::fromUtf8("Максимум"),this);
     pTtl=tSum;
     hCube = new hyper_cube;
     n=axes.size();
@@ -65,22 +65,9 @@ QVariant OlapModel::headerData(int section, Qt::Orientation orientation, int rol
     return QAbstractTableModel::headerData(section,orientation,role);
 }
 
-void OlapModel::setQuery(QString query)
+void OlapModel::setCubeData(const data_cube &d)
 {
-    QSqlQuery qu;
-    s_keys vk(n);
-    hCube->setN(n);
-    qu.prepare(query);
-    if(qu.exec()){
-        while (qu.next()) {
-            for(int i=0; i<n; i++){
-                vk[i] = qu.value(i).toString() + '\n';
-            }
-            hCube->add(vk, qu.value(n).toDouble());
-        }
-    } else {
-        QMessageBox::critical(NULL,"Error",qu.lastError().text(),QMessageBox::Ok);
-    }
+    hCube->setData(d,n);
     refresh();
 }
 
@@ -145,4 +132,55 @@ void OlapModel::setTypeMin(bool b)
         pTtl=tMin;
         refresh();
     }
+}
+
+ProxyDataModel::ProxyDataModel(QObject *parent) : QSortFilterProxyModel(parent)
+{
+    en=false;
+}
+
+bool ProxyDataModel::filterAcceptsRow(int source_row, const QModelIndex &/*source_parent*/) const
+{
+    bool b=true;
+    if (en) {
+        for (int j=0; j<sourceModel()->columnCount(); j++){
+            QString dt=sourceModel()->data(sourceModel()->index(source_row,j),Qt::EditRole).toString();
+            QStringList list = selection.value(j);
+            b = b && (list.isEmpty() || list.contains(dt));
+        }
+    }
+    return b;
+}
+
+QStringList ProxyDataModel::getSelectVal(int column)
+{
+    return selection.value(column);
+}
+
+QStringList ProxyDataModel::getSourceVal(int column)
+{
+    QStringList l;
+    for (int i=0; i<sourceModel()->rowCount(); i++){
+        QString dt=sourceModel()->data(sourceModel()->index(i,column),Qt::EditRole).toString();
+        if (!l.contains(dt)){
+            l.push_back(dt);
+        }
+    }
+    std::sort(l.begin(),l.end());
+    return l;
+}
+
+void ProxyDataModel::setSelectVal(int column, QStringList vals)
+{
+    beginResetModel();
+    selection.remove(column);
+    selection.insert(column,vals);
+    endResetModel();
+}
+
+void ProxyDataModel::setFilterEnabled(bool b)
+{
+    beginResetModel();
+    en=b;
+    endResetModel();
 }

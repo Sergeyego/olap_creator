@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>234</width>
-    <height>219</height>
+    <width>232</width>
+    <height>217</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -38,7 +44,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset theme="go-up" resource="res.qrc">
+        <iconset theme="go-up">
          <normaloff>:/images/up.png</normaloff>:/images/up.png</iconset>
        </property>
       </widget>
@@ -49,7 +55,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset theme="go-down" resource="res.qrc">
+        <iconset theme="go-down">
          <normaloff>:/images/down.png</normaloff>:/images/down.png</iconset>
        </property>
       </widget>
@@ -71,8 +77,6 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="res.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

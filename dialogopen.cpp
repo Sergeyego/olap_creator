@@ -8,7 +8,7 @@ DialogOpen::DialogOpen(QWidget *parent) :
     ui->setupUi(this);
 
     model = new QSqlQueryModel(this);
-    model->setQuery("select id, nam, columns, query, dc from olaps order by nam");
+    model->setQuery("select id, nam, array_to_json(columns), query, dc from olaps order by nam");
     if (model->lastError().isValid()){
         QMessageBox::critical(this,QObject::tr("Error"),model->lastError().text(),QMessageBox::Ok);
     } else {
@@ -45,30 +45,17 @@ QString DialogOpen::query() const
 
 QStringList DialogOpen::axes() const
 {
-    QString a=currentData(2).toString();
-    a=a.replace('{',"");
-
-    QStringList list;
-    int pos=0;
-    QRegExp ex1("^\"([^\"].*[^\\\\])[\"][,}]");
-    ex1.setMinimal(true);
-    QRegExp ex2("^([^\"].*)[,}]");
-    ex2.setMinimal(true);
-
-    while (ex1.indexIn(a)!=-1 || ex2.indexIn(a)!=-1){
-        if (ex1.indexIn(a)!=-1){
-            list << ex1.cap(1);
-            pos=ex1.indexIn(a)+ex1.cap(1).size()+2;
-        } else if (ex2.indexIn(a)!=-1){
-            list << ex2.cap(1);
-            pos=ex2.indexIn(a)+ex2.cap(1).size();
-        } else {
-            pos=-1;
-        }
-        a=a.mid(pos+1);
+    QStringList axes;
+    QVariantList list;
+    QJsonDocument obj = QJsonDocument::fromJson(currentData(2).toByteArray());
+    if (obj.isArray()){
+        list = obj.array().toVariantList();
+    }
+    for (QVariant v : list){
+        axes.push_back(v.toString());
     }
 
-    return list;
+    return axes;
 }
 
 int DialogOpen::dec() const

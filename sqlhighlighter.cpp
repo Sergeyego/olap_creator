@@ -6,30 +6,32 @@ SQLHighlighter::SQLHighlighter(QTextDocument *parent)
 
 }
 
-void SQLHighlighter::setFormatByRegExp(const QRegExp &re, const QString &text, const QColor &color)
+void SQLHighlighter::setFormatByRegExp(const QRegularExpression &re, const QString &text, const QColor &color)
 {
-	for (int i = re.indexIn(text, 0); i != -1; i = re.indexIn(text, i + re.matchedLength())) {
-		setFormat(i, re.matchedLength(), color);
-	}
+    QRegularExpressionMatchIterator i = re.globalMatch(text);
+    while (i.hasNext()) {
+        QRegularExpressionMatch match = i.next();
+        setFormat(match.capturedStart(), match.capturedLength(), color);
+    }
 }
 
 void SQLHighlighter::highlightBlock(const QString &text)
 {
-	const QRegExp commandsRegexp("\\b(?:select|from|where|and|case|when|then|else|distinct|all|null|"
+    const QRegularExpression commandsRegexp("\\b(?:select|from|where|and|case|when|then|else|distinct|all|null|"
 								 "is|like|between|not|group|by|having|order|inner|outer|right|left|alter|with|isnull|cast|create|replace|function|"
                                  "returns|language|volatile|cost|table|view|or|returning|"
 								 "asc|desc|"
-								 "join|on|using|union|exists|in|as|intersect|except|coalesce|insert|into|update)\\b",
-								 Qt::CaseInsensitive);
+                                 "join|on|using|union|exists|in|as|intersect|except|coalesce|insert|into|update)\\b",
+                                 QRegularExpression::CaseInsensitiveOption);
     setFormatByRegExp(commandsRegexp, text, QColor(12,70,200));
 
-    const QRegExp functionRegexp("\\b[A-Za-z0-9_]+(?=\\()", Qt::CaseInsensitive);
+    const QRegularExpression functionRegexp("\\b[A-Za-z0-9_]+(?=\\()", QRegularExpression::CaseInsensitiveOption);
     setFormatByRegExp(functionRegexp, text, QColor(3,103,128));
 
-    const QRegExp numbersRegexp("\\b((\\d+)(\\.)?)",Qt::CaseInsensitive);
+    const QRegularExpression numbersRegexp("\\b((\\d+)(\\.)?)",QRegularExpression::CaseInsensitiveOption);
     setFormatByRegExp(numbersRegexp, text, QColor(0,7,194));
 
-    const QRegExp commentRegexp("--[^\\n]*");
+    const QRegularExpression commentRegexp("--[^\\n]*");
     setFormatByRegExp(commentRegexp, text, QColor(23,139,23));
 
     setCurrentBlockState(2);

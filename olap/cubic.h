@@ -101,6 +101,7 @@ public:
     void setN(int n);
     int make_proj(i_dims Y, i_dims X, Ttl* pTtl);
     void add(s_keys sk, double res);
+    void setData(const data_cube &d, int n);
     //protected:
     void clear();
     void dims(i_dims Y, i_dims X);

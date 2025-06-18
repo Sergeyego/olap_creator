@@ -203,7 +203,7 @@ QChar CodeEditor::character(const QTextCursor &c)
 void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
     QPainter painter(lineNumberArea);
-    painter.fillRect(event->rect(), palette().background().color());
+    painter.fillRect(event->rect(), palette().window().color());
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();

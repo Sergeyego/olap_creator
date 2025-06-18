@@ -21,7 +21,7 @@ protected:
 private:
 	Q_DISABLE_COPY(SQLHighlighter)
 
-	void setFormatByRegExp(const QRegExp &re, const QString &text, const QColor& color);
+    void setFormatByRegExp(const QRegularExpression &re, const QString &text, const QColor& color);
 };
 
 #endif

@@ -6,6 +6,9 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 namespace Ui {
 class DialogOpen;

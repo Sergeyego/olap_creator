@@ -22,6 +22,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+include(xlsx/qtxlsx.pri)
 
 SOURCES += \
         main.cpp \
@@ -30,6 +31,8 @@ SOURCES += \
     olap/axiswidget.cpp \
     olap/cubewidget.cpp \
     olap/cubic.cpp \
+    olap/dialogolapflt.cpp \
+    olap/formfilter.cpp \
     olap/olapmodel.cpp \
     olap/tableview.cpp \
     formedtolap.cpp \
@@ -43,6 +46,8 @@ HEADERS += \
     olap/axiswidget.h \
     olap/cubewidget.h \
     olap/cubic.h \
+    olap/dialogolapflt.h \
+    olap/formfilter.h \
     olap/olapmodel.h \
     olap/tableview.h \
     formedtolap.h \
@@ -56,10 +61,9 @@ FORMS += \
     olap/axiswidget.ui \
     olap/cubewidget.ui \
     formedtolap.ui \
-    dialogopen.ui
-
-INCLUDEPATH+=/usr/include/xlslib
-LIBS += -lxls
+    dialogopen.ui \
+    olap/dialogolapflt.ui \
+    olap/formfilter.ui
 
 RESOURCES += \
     res.qrc

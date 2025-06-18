@@ -204,9 +204,10 @@ void FormEdtOlap::goQuery()
     model->setQuery(qu);
     qint64 querytime=dt1.msecsTo(QDateTime::currentDateTime());
     if (model->lastError().isValid()){
-        QRegExp reg("\\n\\w*\\s(\\d+):\\s");
-        if (reg.indexIn(model->lastError().databaseText())!=-1){
-            ui->plainTextEditQury->setErrRow(reg.cap(1).toInt());
+        QRegularExpression reg("\\n\\w*\\s(\\d+):\\s");
+        QRegularExpressionMatch match = reg.match(model->lastError().databaseText());
+        if (match.hasMatch()){
+            ui->plainTextEditQury->setErrRow(match.captured(1).toInt());
         } else {
             ui->plainTextEditQury->setErrRow(-1);
         }

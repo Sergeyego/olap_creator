@@ -3,6 +3,26 @@
 TableView::TableView(QWidget *parent) : QTableView(parent)
 {
     verticalHeader()->setDefaultSectionSize(verticalHeader()->fontMetrics().height()*1.5);
+    verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    removeAct = new QAction(QString::fromUtf8("Удалить"),this);
+    saveAct = new QAction(QString::fromUtf8("Сохранить"),this);
+
+    connect(removeAct,SIGNAL(triggered()),this,SLOT(remove()));
+    connect(saveAct,SIGNAL(triggered(bool)),this,SLOT(saveXLSX()));
+}
+
+void TableView::contextMenuEvent(QContextMenuEvent *event)
+{
+    if (this->selectionModel()){
+        QMenu menu(this);
+        menu.addAction(saveAct);
+        menu.addSeparator();
+        QModelIndex index=this->indexAt(event->pos());
+        if (index.isValid() && this->editTriggers()!=QAbstractItemView::NoEditTriggers && (model()->flags(index) & Qt::ItemIsEditable)){
+            menu.addAction(removeAct);
+        }
+        menu.exec(event->globalPos());
+    }
 }
 
 void TableView::resizeToContents()
@@ -27,110 +47,176 @@ void TableView::resizeToContents()
         l=s.split("\n");
         max=0;
         for (int k=0; k<l.size(); k++){
+#if (QT_VERSION < QT_VERSION_CHECK(5, 11, 0))
             if (max<fontMetrics().width(l.at(k)))
                 max=fontMetrics().width(l.at(k));
+#else
+            if (max<fontMetrics().horizontalAdvance(l.at(k)))
+                max=fontMetrics().horizontalAdvance(l.at(k));
+#endif
         }
         for (int j=0; j<m; j++){
             s=model()->data(model()->index(j,i)).toString();
             l=s.split("\n");
             for (int k=0; k<l.size(); k++){
-                if (max<fontMetrics().width(l.at(k)))
-                    max=fontMetrics().width(l.at(k));
+#if (QT_VERSION < QT_VERSION_CHECK(5, 11, 0))
+            if (max<fontMetrics().width(l.at(k)))
+                max=fontMetrics().width(l.at(k));
+#else
+            if (max<fontMetrics().horizontalAdvance(l.at(k)))
+                max=fontMetrics().horizontalAdvance(l.at(k));
+#endif
             }
+        }
+        if (max>300) {
+            max=300;
         }
         setColumnWidth(i,max+12);
     }
 }
 
-void TableView::save(QString fnam)
+void TableView::save(QString fnam, int dec, bool fitToHeight, Qt::ScreenOrientation orientation)
 {
-    if (!model()) return;
     int rows,cols;
-    int i,j;
     rows=this->model()->rowCount();
     cols=this->model()->columnCount();
 
     if (rows*cols>1){
-        workbook wb;
-        worksheet *sh = wb.sheet("sheet");
-        cell_t *cref;
+        Document xlsx;
+        Worksheet *ws=xlsx.currentWorksheet();
 
-        xf_t * fmt = wb.xformat();
-        fmt->SetBorderStyle(BORDER_LEFT, BORDER_THIN);
-        fmt->SetBorderStyle(BORDER_RIGHT, BORDER_THIN);
-        fmt->SetBorderStyle(BORDER_TOP, BORDER_THIN);
-        fmt->SetBorderStyle(BORDER_BOTTOM, BORDER_THIN);
+        XlsxPageSetup pageSetup=ws->pageSetup();
+        if (fitToHeight){
+            pageSetup.fitToPage=true;
+            pageSetup.fitToWidth=1;
+            pageSetup.fitToHeight=0;
+        }
+        if (orientation==Qt::PortraitOrientation){
+            pageSetup.orientation=XlsxPageSetup::portrait;
+        } else if (orientation==Qt::LandscapeOrientation){
+            pageSetup.orientation=XlsxPageSetup::landscape;
+        }
+        ws->setPageSetup(pageSetup);
 
-        QString hCubeell;
-        sh->label(0,0,fnam.toStdWString());
-        cref=sh->FindCellOrMakeBlank(0,0);
-        cref->fontbold(BOLDNESS_DOUBLE);
-        sh->rowheight(0,300);
+        QFont defaultFont("Arial", 10);
+        QFont titleFont("Arial", 10);
+        titleFont.setBold(true);
+        Format strFormat;
+        strFormat.setBorderStyle(Format::BorderThin);
+        strFormat.setFont(defaultFont);
+        Format numFormat;
+        numFormat.setBorderStyle(Format::BorderThin);
+        numFormat.setFont(defaultFont);
 
-        sh->rowheight(1,(this->horizontalHeader()->sizeHint().height())*30);
+        Format headerFormat=strFormat;
+        headerFormat.setFont(titleFont);
+        headerFormat.setTextWarp(true);
+        headerFormat.setHorizontalAlignment(Format::AlignHCenter);
+        headerFormat.setVerticalAlignment(Format::AlignVCenter);
 
-        sh->colwidth(0,(this->verticalHeader()->sizeHint().width())*38);
+        Format titleFormat;
+        titleFormat.setFont(titleFont);
 
-        sh->blank(1,0,fmt);
+        ws->writeString(CellReference("A1"),fnam,titleFormat);
 
-        for(i=0;i<cols;i++){
-            hCubeell=this->model()->headerData(i,Qt::Horizontal).toString();
-            hCubeell.replace(QChar('\n'),QChar('\n'));
-            sh->label(1,i+1,hCubeell.toStdWString(),fmt);
-            cref=sh->FindCellOrMakeBlank(1,i+1);
-            cref->fontbold(BOLDNESS_DOUBLE);
-            cref->halign(HALIGN_JUSTIFY);
-            sh->colwidth(i+1,(this->columnWidth(i)*38));
+        int m=2;
+        ws->setRowHeight(2,2,this->horizontalHeader()->height());
+        for(int i=0;i<cols;i++) {
+            if (!this->isColumnHidden(i)) {
+                QString hCubeell=this->model()->headerData(i,Qt::Horizontal).toString();
+                hCubeell.replace(QChar('\n'),QChar('\n'));
+                ws->writeString(2,m,hCubeell,headerFormat);
+                ws->setColumnWidth(m,m,this->columnWidth(i)/7.0);
+                m++;
+            }
         }
 
-        for(j=0;j<rows;j++){
-            sh->label(j+2,0,this->model()->headerData(j,Qt::Vertical).toString().toStdWString(),fmt);
-            cref=sh->FindCellOrMakeBlank(j+2,0);
-            cref->halign(HALIGN_LEFT);
-        }
-
-        for (i=0;i<rows;i++)
-            for(j=0;j<cols;j++){
-                xf_t * pxf = wb.xformat();
-                pxf->SetBorderStyle(BORDER_LEFT, BORDER_THIN);
-                pxf->SetBorderStyle(BORDER_RIGHT, BORDER_THIN);
-                pxf->SetBorderStyle(BORDER_TOP, BORDER_THIN);
-                pxf->SetBorderStyle(BORDER_BOTTOM, BORDER_THIN);
-                QVariant vdisp=this->model()->data(this->model()->index(i,j),Qt::DisplayRole);
-                QVariant vedt=this->model()->data(this->model()->index(i,j),Qt::EditRole);
-
-                QString tname=vedt.typeName();
-
-                if (tname==QString("int")){
-                    pxf->SetFormat(FMT_NUMBER3);
-                } else if (tname==QString("double")){
-                    pxf->SetFormat(FMT_NUMBER4);
-                } else {
-                    pxf->SetFormat(FMT_GENERAL);
-                }
-                if (!vdisp.toString().isEmpty()){
-                    if (tname==QString("double") || tname==QString("int")){
-                        sh->number(i+2,j+1,vedt.toDouble(),pxf);
-                    } else {
-                        sh->label(i+2,j+1,vdisp.toString().toStdWString(),pxf);
-                    }
-                } else {
-                    sh->blank(i+2,j+1,pxf);
+        if (!this->verticalHeader()->isHidden()){
+            m=3;
+            ws->setColumnWidth(1,1,this->verticalHeader()->width()/7.0);
+            ws->writeBlank(2,1,strFormat);
+            for(int j=0;j<rows;j++) {
+                if (!this->isRowHidden(j)) {
+                    QString hCubeell=this->model()->headerData(j,Qt::Vertical).toString();
+                    hCubeell.replace(QChar('\n'),QChar('\n'));
+                    ws->writeString(m,1,hCubeell,strFormat);
+                    m++;
                 }
             }
+        }
+
+        for (int i=0;i<rows;i++){
+            m=2;
+            for(int j=0;j<cols;j++){
+                if (!this->isColumnHidden(j)) {
+                    int role=Qt::EditRole;
+                    QVariant value=this->model()->data(this->model()->index(i,j),role);
+                    int d=(value.typeName()==QString("int"))? 0 : dec;
+                    if (d<0){
+                        d=2;
+                    }
+                    if ((value.typeName()==QString("double"))||value.typeName()==QString("int")){
+                        if (d>=1){
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+                            QString fmt=QString("# ##0.%1").arg((0),d,10,QChar('0'));
+#else
+                            QString fmt=QString("# ##0.%1").arg((0),d,'d',0,QChar('0'));
+#endif
+                            numFormat.setNumberFormat(fmt);
+                        } else {
+                            numFormat.setNumberFormat("0");
+                        }
+                        if (!model()->data(this->model()->index(i,j),Qt::DisplayRole).toString().isEmpty()){
+                            ws->writeNumeric(i+3,m,value.toDouble(),numFormat);
+                        } else {
+                            ws->writeBlank(i+3,m,numFormat);
+                        }
+                    } else {
+                        value=this->model()->data(this->model()->index(i,j),Qt::DisplayRole);
+                        ws->writeString(i+3,m,value.toString(),strFormat);
+                    }
+                    m++;
+                }
+            }
+        }
 
         QSettings settings("szsm", QApplication::applicationName());
         QDir dir(settings.value("savePath",QDir::homePath()).toString());
-        QString filename = QFileDialog::getSaveFileName(this,tr("Сохранить документ"),
-                                                        dir.path()+"/"+fnam+".xls",
-                                                        tr("Documents (*.xls)") );
+        QString filename = QFileDialog::getSaveFileName(nullptr,QString::fromUtf8("Сохранить документ"),
+                                                        dir.path()+"/"+fnam,
+                                                        QString::fromUtf8("Documents (*.xlsx)") );
         if (!filename.isEmpty()){
+            if (filename.right(5)!=".xlsx"){
+                filename+=".xlsx";
+            }
+            xlsx.saveAs(filename);
             QFile file(filename);
-            if (file.exists()) file.remove();
-            std::string fil(filename.toLocal8Bit());
-            wb.Dump(fil);
             QFileInfo info(file);
             settings.setValue("savePath",info.path());
         }
     }
+}
+
+void TableView::remove()
+{
+    if (model()){
+        QModelIndex ind=this->currentIndex();
+        QString dat;
+        for(int i=0; i<model()->columnCount(); i++) {
+            if (!dat.isEmpty()){
+                dat+=", ";
+            }
+            dat+=model()->data(model()->index(ind.row(),i),Qt::DisplayRole).toString();
+        }
+        int n=QMessageBox::question(NULL,QString::fromUtf8("Подтвердите удаление"),
+                                    QString::fromUtf8("Подтветждаете удаление ")+dat+QString::fromUtf8("?"),QMessageBox::Yes| QMessageBox::No);
+        if (n==QMessageBox::Yes){
+            emit sigRemove(ind.row());
+        }
+    }
+}
+
+void TableView::saveXLSX()
+{
+    save("");
 }

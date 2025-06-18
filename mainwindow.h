@@ -8,7 +8,6 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QMessageBox>
-#include <QTextCodec>
 #include <QSettings>
 #include <QCloseEvent>
 #include "olap/cubewidget.h"
